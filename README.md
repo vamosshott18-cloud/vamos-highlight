@@ -1,8 +1,17 @@
 # Vamos Highlight
 
-Aplikasi Mac untuk videografer bola: video HP satu event → dipisah per match → momen gol/save dicari otomatis → clip siap upload dengan bumper **Enerjik** Vamos Shott (GOL hijau, REPLAY biru), watermark, dan volume rata.
+Aplikasi untuk videografer bola (HP/iPad/tablet dan Mac): video HP satu event → dipisah per match → momen gol/save dicari otomatis → clip siap upload dengan bumper **Enerjik** Vamos Shott (GOL hijau, REPLAY biru), watermark, dan volume rata.
 
-## Pasang
+## Versi HP / iPad / tablet
+
+Buka **https://vamosshott18-cloud.github.io/vamos-highlight/** di Safari (iPhone/iPad) atau Chrome (Android), lalu **Bagikan → Tambah ke Layar Utama**. Semua proses jalan di perangkat itu sendiri; video tidak diunggah ke mana pun.
+
+- Pilih video dari galeri atau Files. Supaya jam rekam asli ikut terbaca, lebih aman lewat **Files**.
+- Selama scan dan membuat clip, biarkan aplikasinya terbuka dan layar menyala. Membuat clip butuh waktu ± sepanjang clip-nya.
+- Clip hasil disimpan di aplikasi sampai dihapus; **Simpan → Simpan Video** untuk memindahkannya ke galeri.
+- Kodenya ada di folder `docs/`.
+
+## Versi Mac
 
 1. Butuh macOS, Python 3, dan ffmpeg:
    ```bash

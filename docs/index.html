@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vamos Highlight</title>
+<meta name="description" content="Pisah video per match, cari momen GOL / REPLAY, pasang bumper Vamos Shott — langsung di HP.">
+<meta name="theme-color" content="#0B1022">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vamos HL">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="ikon/ikon-192.png">
+<link rel="apple-touch-icon" href="ikon/apple-touch-icon.png">
+<link rel="stylesheet" href="fonts.css">
+<style>
+:root{
+  --bg:#0B1022; --panel:#131A34; --panel2:#1A2245; --line:#27305A; --line2:#343F72; --ink:#EEF1F8; --muted:#97A0C2; --dim:#6B7399;
+  --volt:#D7FF3C; --cyan:#38D9FF; --red:#FF5A4E; --navy:#0B1022;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Space Grotesk',system-ui,sans-serif;overscroll-behavior-y:none}
+.top{position:sticky;top:0;z-index:15;background:#0B1022f2;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-top:var(--st)}
+.top .in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px}
+.brand b{font:italic 900 19px/1 Archivo;font-stretch:118%;letter-spacing:-.5px}
+.brand b span{color:var(--volt)}
+.pname{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
+.pname label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+#pname{background:var(--panel);border:1px solid var(--line);color:var(--ink);font:600 15px 'Space Grotesk';padding:7px 10px;border-radius:9px;width:210px;max-width:46vw}
+#pname:focus{outline:none;border-color:var(--volt)}
+.app{max-width:1240px;margin:0 auto;padding:22px 16px calc(150px + var(--sb));display:grid;grid-template-columns:220px minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:960px){.app{grid-template-columns:1fr;gap:14px;padding-top:12px}}
+.rail{position:sticky;top:80px;display:flex;flex-direction:column;gap:2px}
+.rail h4{margin:0 0 10px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.rs{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;padding:10px;border-radius:12px;text-decoration:none;color:inherit;position:relative}
+.rs .dot{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font:900 14px Archivo;border:1.5px solid var(--line2);color:var(--muted);transform:skewX(-8deg)}
+.rs .t{font-weight:600;font-size:14px;line-height:1.25;padding-top:1px}
+.rs .s{font-size:12.5px;color:var(--muted);line-height:1.35;margin-top:2px}
+.rs:not(:last-child)::after{content:"";position:absolute;left:24px;top:44px;bottom:-6px;width:1.5px;background:var(--line)}
+.rs.done .dot{background:#D7FF3C1f;border-color:#D7FF3C66;color:var(--volt)}
+.rs.current{background:var(--panel)} .rs.current .dot{background:var(--volt);border-color:var(--volt);color:var(--navy)} .rs.current .t{color:var(--volt)}
+.rs.locked{opacity:.5}
+@media (max-width:960px){
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rail h4{display:none}
+  .rs{grid-template-columns:24px auto;min-width:max-content;padding:7px 10px;align-items:center}
+  .rs .dot{width:24px;height:24px;font-size:12px}
+  .rs .s,.rs::after{display:none}
+}
+main{display:flex;flex-direction:column;gap:14px;min-width:0}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:18px;scroll-margin-top:80px}
+.step.current{border-color:#D7FF3C88;box-shadow:0 0 0 4px #D7FF3C0f}
+.sh{display:flex;align-items:center;gap:12px;padding:16px 18px}
+.sh .n{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--panel2);border:1.5px solid var(--line2);color:var(--muted);font:900 15px Archivo;transform:skewX(-10deg)}
+.step.current .sh .n{background:var(--volt);border-color:var(--volt);color:var(--navy)}
+.step.done .sh .n{background:#D7FF3C1f;border-color:#D7FF3C66;color:var(--volt)}
+.sh h2{margin:0;font:italic 900 20px/1.15 Archivo;font-stretch:112%}
+.sh .lead{margin:3px 0 0;color:var(--muted);font-size:14px}
+.sh .side{margin-left:auto;flex:none}
+.sb{padding:0 18px 20px}
+.step.collapsed .sb,.step.locked .sb{display:none}
+.step.collapsed .sh .lead{color:var(--ink)}
+.step.locked{opacity:.55}
+.edit{background:none;border:1px solid var(--line2);color:var(--muted);font-size:13px;padding:6px 12px}
+.label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px}
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+input[type=text],textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{width:100%;min-height:118px;font:15px/1.55 ui-monospace,Menlo,monospace;resize:vertical}
+textarea:focus{outline:none;border-color:var(--volt)}
+button{font:600 15px 'Space Grotesk';border:1px solid var(--line2);background:var(--panel2);color:var(--ink);padding:11px 16px;border-radius:11px;cursor:pointer;touch-action:manipulation}
+button.primary{background:var(--volt);color:var(--navy);border-color:var(--volt)}
+button.big{font-size:16px;padding:14px 22px;border-radius:13px}
+button.ghost{background:none;border-color:transparent;color:var(--muted)}
+button.danger{background:none;border-color:transparent;color:var(--red)}
+button:disabled{opacity:.4}
+@media (hover:hover){button:hover:not(:disabled){border-color:var(--volt)} button.primary:hover:not(:disabled){filter:brightness(1.07)}}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.small{font-size:13px;color:var(--muted)}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:30px;padding:3px 11px;font-size:13px}
+.err{color:var(--red)} .ok{color:var(--volt)}
+.note{display:flex;flex-direction:column;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note b{color:var(--ink);font-weight:600}
+.warn{background:#FF5A4E14;border:1px solid #FF5A4E55;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:12px}
+.tag{font:900 11px Archivo;padding:3px 8px;border-radius:5px;letter-spacing:.5px;transform:skewX(-8deg);display:inline-block}
+.tag.GOL{background:var(--volt);color:var(--navy)} .tag.REPLAY{background:var(--cyan);color:var(--navy)}
+.pick{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 16px;border:2px dashed var(--line2);border-radius:16px;background:var(--panel2);text-align:center}
+.pick .ic{font-size:34px;line-height:1}
+.srcok{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:12px;background:#D7FF3C10;border:1px solid #D7FF3C40}
+.flist{margin-top:10px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.flist div{display:flex;gap:10px;padding:7px 12px;border-top:1px solid #ffffff0a;font-size:13px}
+.flist div:first-child{border-top:0}
+.flist span:last-child{margin-left:auto;color:var(--muted)}
+/* job bar */
+#jobbar{position:fixed;left:0;right:0;bottom:0;background:#060914f2;border-top:1px solid var(--line);padding:12px 16px calc(12px + var(--sb));display:none;z-index:20;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#jobbar .in{max-width:1240px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#jobbar .bar{flex:1 1 140px;height:8px;background:var(--panel2);border-radius:8px;overflow:hidden}
+#jobbar .bar i{display:block;height:100%;background:var(--volt);width:0;transition:width .3s}
+#jobbar .msg{flex:2 1 220px;font-size:14px}
+/* review */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:11px 13px}
+.stat b{display:block;font:italic 900 28px/1 Archivo;font-stretch:112%}
+.stat span{font-size:12.5px;color:var(--muted)}
+.stat.main{background:#D7FF3C14;border-color:#D7FF3C55} .stat.main b{color:var(--volt)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 4px}
+.match{border:1px solid var(--line);border-radius:16px;margin-top:14px;overflow:hidden;background:var(--bg)}
+.mhead{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;padding:13px 14px 4px}
+.mhead b{font:italic 900 18px Archivo;font-stretch:112%}
+.mhead .cnt{margin-left:auto;display:flex;gap:8px;align-items:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:12px 14px 14px}
+.mc{background:var(--panel);border:2px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;position:relative}
+.mc.on{border-color:#D7FF3C99}
+.mc.off img{opacity:.35;filter:grayscale(.7)}
+.mc .th{position:relative;background:#000}
+.mc img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.mc .th .tag{position:absolute;top:8px;left:8px}
+.mc .dur{position:absolute;bottom:8px;right:8px;background:#000b;font-size:12px;padding:1px 7px;border-radius:5px}
+.mc .chk{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:9px;border:2px solid #fff9;background:#0008;display:grid;place-items:center;font-weight:900;color:var(--navy)}
+.mc.on .chk{background:var(--volt);border-color:var(--volt)}
+.mc .meta{padding:9px 10px 4px}
+.mc .clk{font:700 15px 'Space Grotesk'}
+.mc .fn{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:20px;margin-top:5px}
+.pill.kuat{background:#D7FF3C1c;color:var(--volt)} .pill.manual{background:#38D9FF1c;color:var(--cyan)}
+.mc .lb{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px 10px}
+.mc .lb button{padding:8px 0;font:900 12px Archivo;letter-spacing:.5px;border-radius:8px;background:var(--bg);color:var(--muted)}
+.mc .lb button.on.GOL{background:var(--volt);color:var(--navy);border-color:var(--volt)}
+.mc .lb button.on.REPLAY{background:var(--cyan);color:var(--navy);border-color:var(--cyan)}
+.sub{padding:4px 14px 0;font-size:13px;font-weight:600;color:var(--muted)}
+.cards.dim{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.cards.dim .mc{background:var(--bg)} .cards.dim .lb,.cards.dim .pill{display:none}
+@media (max-width:520px){.cards,.cards.dim{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}}
+.empty{color:var(--muted);padding:6px 14px 14px}
+details.clips{border-top:1px solid var(--line)}
+details.clips summary{padding:12px 14px;cursor:pointer;color:var(--muted);font-size:14px;list-style:none}
+details.clips summary::-webkit-details-marker{display:none}
+details.clips summary::before{content:"+ ";color:var(--volt);font-weight:700}
+details.clips[open] summary::before{content:"− "}
+.clip{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid #ffffff0a;font-size:13px}
+.clip select{font-size:14px;padding:7px 8px;max-width:130px}
+/* export */
+.fmt{display:grid;grid-template-columns:repeat(2,minmax(0,200px));gap:12px;margin-bottom:12px}
+.fmt label{display:flex;gap:12px;align-items:center;padding:14px;border:2px solid var(--line);border-radius:14px;background:var(--panel2);cursor:pointer}
+.fmt label:has(input:checked){border-color:var(--volt);background:#D7FF3C10}
+.fmt input{position:absolute;opacity:0;pointer-events:none}
+.fmt .ic{flex:none;border:2px solid var(--muted);border-radius:4px}
+.fmt label:has(input:checked) .ic{border-color:var(--volt);background:#D7FF3C33}
+.fmt b{display:block;font-size:15px;color:var(--ink)} .fmt span{font-size:12.5px;color:var(--muted)}
+.go{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.live{display:none;gap:14px;align-items:center;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.live canvas{height:150px;width:auto;border-radius:8px;background:#000}
+.hasil{margin-top:16px}
+.hasil .hh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.hl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.hi{background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.hi video{width:100%;aspect-ratio:9/16;object-fit:contain;background:#000;display:block}
+.hi.L video{aspect-ratio:16/9}
+.hi .m{padding:8px 10px;font-size:12px}
+.hi .m b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi .r{display:grid;grid-template-columns:1fr auto;gap:6px;padding:0 10px 10px}
+.hi .r button{padding:8px 0;font-size:13px}
+/* editor */
+#ed{position:fixed;inset:0;background:#000d;display:none;z-index:30;align-items:center;justify-content:center;padding:12px}
+#ed .pan{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:1020px;width:100%;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;display:grid;grid-template-columns:minmax(200px,340px) 1fr;gap:18px;padding:16px}
+@media (max-width:760px){#ed{padding:0} #ed .pan{grid-template-columns:1fr;border-radius:0;max-height:100dvh;height:100dvh;padding:calc(10px + var(--st)) 14px calc(16px + var(--sb))} #ed .pan video{max-height:44vh}}
+#ed video{width:100%;max-height:72vh;background:#000;border-radius:12px;display:block}
+#ed canvas{width:100%;height:64px;background:var(--bg);border-radius:9px;display:block;touch-action:none}
+.edh{display:flex;align-items:flex-start;gap:12px}
+.edh h3{margin:0;font:italic 900 21px/1.1 Archivo;font-stretch:112%}
+.edh button{margin-left:auto;flex:none}
+.grp{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{padding:12px;font:900 16px Archivo;letter-spacing:.5px;border-width:2px}
+.seg button.on.GOL{background:var(--volt);color:var(--navy);border-color:var(--volt)} .seg button.on.REPLAY{background:var(--cyan);color:var(--navy);border-color:var(--cyan)}
+.trim{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.trim .bx{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.trim .v{font:700 18px 'Space Grotesk';margin:2px 0 8px}
+.trim .row button{padding:8px 10px;font-size:13px}
+.chk2{display:flex;gap:10px;align-items:center;font-size:15px;cursor:pointer}
+.chk2 input{width:20px;height:20px;accent-color:var(--volt)}
+/* lock */
+#kunci{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;place-items:center;padding:20px}
+#kunci .kb{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px}
+#kunci .brand{margin-bottom:20px}
+#kunci h2{margin:0 0 6px;font:italic 900 23px/1.15 Archivo;font-stretch:112%}
+#kunci p{margin:0 0 16px;color:var(--muted);font-size:14px}
+#kunci .dev{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;margin-bottom:18px}
+#kodeIn{width:100%;font:700 28px/1 ui-monospace,Menlo,monospace;letter-spacing:10px;text-align:center;padding:12px;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:12px}
+#kodeIn:focus{outline:none;border-color:var(--volt)}
+#kMsg{min-height:20px;margin:10px 0 0}
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="brand">
+    <svg width="38" height="31" viewBox="0 0 120 100"><path d="M24 0 H120 L96 100 H0 Z" fill="#D7FF3C"/><text x="59" y="76" text-anchor="middle" fill="#0B1022" style="font-family:Archivo;font-weight:900;font-style:italic;font-stretch:112%;font-size:70px;letter-spacing:-3px">VS</text></svg>
+    <b>VAMOS <span>HIGHLIGHT</span></b>
+  </div>
+  <div class="pname"><label for="pname">Event</label><input id="pname" title="Jadi awal nama file hasil"></div>
+</div></div>
+
+<div class="app">
+<nav class="rail">
+  <h4>Alur kerja</h4>
+  <a class="rs" href="#s1" data-s="1"><span class="dot">1</span><span><div class="t">Pilih video</div><div class="s"></div></span></a>
+  <a class="rs" href="#s2" data-s="2"><span class="dot">2</span><span><div class="t">Atur match &amp; scan</div><div class="s"></div></span></a>
+  <a class="rs" href="#s3" data-s="3"><span class="dot">3</span><span><div class="t">Pilih momen</div><div class="s"></div></span></a>
+  <a class="rs" href="#s4" data-s="4"><span class="dot">4</span><span><div class="t">Buat clip</div><div class="s"></div></span></a>
+</nav>
+
+<main>
+<section class="step" id="s1">
+  <div class="sh"><span class="n">1</span><div><h2>Pilih video</h2><p class="lead" data-lead="Video pertandingan dari galeri atau Files."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <label class="pick" for="fileIn">
+      <span class="ic">🎬</span>
+      <b>Pilih video</b>
+      <span class="small">Boleh banyak sekaligus. Video tidak diunggah ke mana pun — semua diproses di perangkat ini.</span>
+    </label>
+    <input type="file" id="fileIn" accept="video/*,.mov,.mp4,.m4v" multiple hidden>
+    <div id="srcInfo"></div>
+  </div>
+</section>
+
+<section class="step" id="s2">
+  <div class="sh"><span class="n">2</span><div><h2>Atur match &amp; scan</h2><p class="lead" data-lead="Tulis jadwal tiap match, lalu biarkan aplikasi mencari momennya."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <div class="two">
+      <div>
+        <span class="label">Jadwal match <span style="text-transform:none;letter-spacing:0;font-weight:400">— opsional</span></span>
+        <textarea id="sched" placeholder="21.00 - 21.15 Match 1&#10;21.20 - 21.35 Match 2&#10;21.40 - 21.55 Match 3"></textarea>
+        <div class="row" style="margin-top:8px;justify-content:space-between">
+          <span class="small">Satu baris = satu match. Kosongkan kalau semua satu pertandingan.</span>
+          <label class="small">Toleransi <select id="tol"><option>0</option><option>1</option><option selected>2</option><option>5</option></select> mnt</label>
+        </div>
+        <button id="btnSched" style="margin-top:10px;display:none">Terapkan jadwal baru</button>
+      </div>
+      <div>
+        <span class="label">Yang dilakukan scan</span>
+        <div class="note">
+          <div><b>1.</b> Membaca jam rekam tiap video dan membaginya ke match.</div>
+          <div><b>2.</b> Mencari clip yang kameranya <b>ditahan diam di akhir</b> (kebiasaan videografer setelah gol/save).</div>
+          <div><b>3.</b> Memberi label <span class="tag GOL">GOL</span> kalau clip berikutnya mulai dari kick-off.</div>
+        </div>
+        <button class="primary big" id="btnScan" style="margin-top:14px;width:100%">Mulai scan</button>
+        <p class="small" id="scanInfo" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="step" id="s3">
+  <div class="sh"><span class="n">3</span><div><h2>Pilih momen</h2><p class="lead" data-lead="Cek kandidat, ganti label kalau perlu, buang yang bukan momen."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <div class="stats" id="summary"></div>
+    <div class="legend">
+      <span>✓ = ikut dibuat clip</span>
+      <span><span class="tag GOL">GOL</span> otomatis kalau ada kick-off sesudahnya</span>
+      <span>Ketuk gambar untuk memutar &amp; mengatur potongan</span>
+    </div>
+    <div id="review"></div>
+  </div>
+</section>
+
+<section class="step" id="s4">
+  <div class="sh"><span class="n">4</span><div><h2>Buat clip</h2><p class="lead" data-lead="Setiap momen diberi bumper Enerjik, watermark Vamos Shott, dan suara dirapikan."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <span class="label">Format</span>
+    <div class="fmt">
+      <label><input type="checkbox" id="oP"><svg class="ic" width="20" height="32"></svg><span><b>Portrait 9:16</b><span>Reels, TikTok, Shorts</span></span></label>
+      <label><input type="checkbox" id="oL"><svg class="ic" width="34" height="20"></svg><span><b>Landscape 16:9</b><span>YouTube, layar lebar</span></span></label>
+    </div>
+    <div class="go">
+      <button class="primary big" id="btnExport">Buat clip momen</button>
+      <span class="small" id="exportInfo"></span>
+    </div>
+    <div class="live" id="live"><canvas id="kanvas"></canvas><div><b id="liveT"></b><div class="small" id="liveS">Jangan kunci layar atau pindah aplikasi sampai selesai.</div></div></div>
+    <div class="hasil" id="hasil"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<div id="kunci"><div class="kb">
+  <div class="brand">
+    <svg width="38" height="31" viewBox="0 0 120 100"><path d="M24 0 H120 L96 100 H0 Z" fill="#D7FF3C"/><text x="59" y="76" text-anchor="middle" fill="#0B1022" style="font-family:Archivo;font-weight:900;font-style:italic;font-stretch:112%;font-size:70px;letter-spacing:-3px">VS</text></svg>
+    <b>VAMOS <span>HIGHLIGHT</span></b>
+  </div>
+  <h2 id="kTitle">Daftarkan perangkat ini</h2>
+  <p id="kLead">Perangkat baru perlu kode sekali saja. Kodenya dikirim ke email pemilik Vamos Highlight.</p>
+  <div class="dev">📱 <b id="kDev"></b></div>
+  <div id="kStep1"><button class="primary big" id="kKirim" style="width:100%">Kirim kode ke email</button></div>
+  <div id="kStep2" style="display:none">
+    <input id="kodeIn" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <button class="primary big" id="kMasuk" style="width:100%;margin-top:12px">Masuk</button>
+    <button class="ghost" id="kUlang" style="width:100%;margin-top:6px">Kirim ulang kode</button>
+  </div>
+  <div class="small" id="kMsg"></div>
+</div></div>
+
+<div id="jobbar"><div class="in"><div class="msg" id="jobmsg"></div><div class="bar"><i id="jobfill"></i></div><button id="btnCancel">Batal</button></div></div>
+
+<div id="ed"><div class="pan">
+  <div><video id="vid" controls playsinline></video></div>
+  <div>
+    <div class="edh"><div><h3 id="edTitle"></h3><div class="small" id="edSub"></div></div><button id="edClose" class="ghost">Tutup ✕</button></div>
+    <div id="edMoment">
+      <div class="grp">
+        <span class="label">Label</span>
+        <div class="seg"><button data-l="GOL" class="GOL">GOL</button><button data-l="REPLAY" class="REPLAY">REPLAY</button></div>
+      </div>
+      <div class="grp">
+        <div class="row" style="justify-content:space-between"><span class="label" style="margin:0">Potongan</span><span class="small" id="edLen"></span></div>
+        <canvas id="wave" width="900" height="128" style="margin-top:8px"></canvas>
+        <div class="small" style="margin-top:5px">Garis = gerakan kamera · area terang = bagian yang dipotong · ketuk grafik untuk lompat</div>
+        <div class="trim">
+          <div class="bx"><span class="small">Awal</span><div class="v" id="edIn"></div>
+            <div class="row"><button data-n="start:-1">−1</button><button data-n="start:1">+1</button><button id="setIn">di sini</button></div></div>
+          <div class="bx"><span class="small">Akhir</span><div class="v" id="edOut"></div>
+            <div class="row"><button data-n="end:-1">−1</button><button data-n="end:1">+1</button><button id="setOut">di sini</button></div></div>
+        </div>
+        <button id="playSeg" class="primary" style="margin-top:12px;width:100%">▶ Putar potongan</button>
+      </div>
+      <div class="grp row" style="justify-content:space-between">
+        <label class="chk2"><input type="checkbox" id="edKeep"> Ikut dibuat clip</label>
+        <button id="delM" class="danger">Hapus momen</button>
+      </div>
+    </div>
+    <div id="edAdd" style="display:none">
+      <div class="grp">
+        <p class="small" style="margin-top:0">Putar videonya, berhenti tepat di momen yang terlewat, lalu tambahkan:</p>
+        <canvas id="wave2" width="900" height="128"></canvas>
+        <div class="seg" style="margin-top:12px"><button class="GOL" data-add="GOL">+ GOL di sini</button><button class="REPLAY" data-add="REPLAY">+ REPLAY di sini</button></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<script src="js/meta.js"></script>
+<script src="js/analisis.js"></script>
+<script src="js/render.js"></script>
+<script src="js/simpan.js"></script>
+<script src="js/kunci.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
