@@ -25,8 +25,8 @@ MOMENT GOL & REPLAY/MATCH 1/01_GOL_21.07.12.mp4 …
 Tombol **Batal** di bar bawah menghentikan proses yang sedang berjalan. Unduhan yang terputus akan dilanjutkan saat diulang.
 
 Cara aplikasi mencari momen (dilatih dari 77 clip SEMINUZ 30-10-26 vs folder MOMENT mereka):
-- **Kandidat kuat (sudah dicentang):** clip yang kameranya mengikuti permainan lalu **ditahan diam ±8 detik sebelum rekaman berhenti**. Itu kebiasaan videografernya setelah gol/save. Hasilnya: 19 dari 19 momen tertangkap, sekitar 6 dari 10 kandidat memang momen.
-- **Usulan lemah (belum dicentang):** lonjakan suara di tengah clip. Suara paling keras sering berasal dari obrolan dekat HP, jadi ini cuma cadangan.
+- **Kandidat kuat (sudah dicentang):** ada dua cara clip ditandai. Pertama, kameranya mengikuti permainan lalu **ditahan diam ±8 detik sebelum rekaman berhenti**. Kedua, **kamera melambat di akhir dan ada jeda panjang sebelum clip berikutnya**. Aturan ini dilatih dari dua vendor: 19/19 momen SEMINUZ tertangkap, dan 32/38 momen vendor kedua (termasuk usulan).
+- **Usulan (belum dicentang):** clip yang polanya agak mirip momen, plus lonjakan suara di tengah clip (versi Mac). Centang kalau ternyata momen.
 - **Label GOL otomatis** diberikan kalau clip berikutnya dimulai dari kick-off di lingkaran tengah. Kartunya bertanda "Kuat · ada kick-off". Dari 11 gol SEMINUZ, 9 tertebak dan tidak ada save yang salah jadi GOL. Kandidat lain tetap REPLAY; ganti ke **GOL** sendiri di kartunya (satu klik).
 - Kalau videografernya punya kebiasaan lain (misalnya terus merekam tanpa berhenti), aturannya perlu dilatih ulang dengan contoh dari dia.
 Butuh: macOS, Python 3, dan ffmpeg (`brew install ffmpeg`).

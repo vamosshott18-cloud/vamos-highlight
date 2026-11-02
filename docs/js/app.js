@@ -179,12 +179,22 @@ $('btnScan').onclick = async () => {
       if (!f.motion) {
         const p = await probeVideo(f.url);
         f.w = p.w; f.h = p.h; if (!f.duration) f.duration = p.duration;
-        f.motion = await gerakKamera(f.url, pr => job(label, (i + pr * 0.8) / n));
+        f.motion = await gerakKamera(f.url, pr => job(label, (i + pr * 0.85) / n));
+        f.kickoff = (await kickoffDanThumb(f.url, [])).kickoff;
       }
-      const m = cariMomen(f.motion, f.duration);
-      const r = await kickoffDanThumb(f.url, m ? [m.peak] : []);
-      f.kickoff = r.kickoff;
-      if (m) auto.push({ ...m, id: S.nextId++, fileId: f.id, manual: false, thumb: r.thumbs[m.peak] });
+    }
+    // jeda ke clip berikutnya ikut menentukan momen, jadi kandidat dicari setelah semua video dibaca
+    const urut = [...S.files].sort((a, b) => a.start - b.start);
+    for (let i = 0; i < urut.length; i++) {
+      const f = urut[i], nx = urut[i + 1];
+      const m = cariMomen(f.motion, f.duration, nx ? (nx.start - f.start) / 1000 - f.duration : null);
+      if (m) auto.push({ ...m, id: S.nextId++, fileId: f.id, manual: false });
+    }
+    for (let i = 0; i < auto.length; i++) {
+      if (JOB.batal) throw new Error('dibatalkan');
+      job(`Membuat gambar momen ${i + 1}/${auto.length}`, 0.97);
+      const m = auto[i], f = S.files.find(x => x.id === m.fileId);
+      try { m.thumb = (await ambilThumb(f.url, [m.peak]))[m.peak]; } catch (e) { /* tanpa gambar */ }
     }
     for (const m of S.moments) if (!m.manual && m.thumb) URL.revokeObjectURL(m.thumb);
     S.moments = S.moments.filter(m => m.manual).concat(auto);
@@ -220,7 +230,7 @@ function renderReview() {
   const opts = sel => names.map((n, i) => `<option value="${i}" ${sel === i ? 'selected' : ''}>${esc(n)}</option>`).join('') + `<option value="-1" ${sel === -1 ? 'selected' : ''}>Di luar jadwal</option>`;
   const card = m => {
     const f = byId[m.fileId];
-    const pill = m.manual ? '<span class="pill manual">Manual</span>' : `<span class="pill kuat">${/kick-off/.test(m.why) ? 'Kuat · ada kick-off' : 'Kuat'}</span>`;
+    const pill = m.manual ? '<span class="pill manual">Manual</span>' : /^usulan/.test(m.why) ? '<span class="pill lemah">Usulan</span>' : `<span class="pill kuat">${/kick-off/.test(m.why) ? 'Kuat · ada kick-off' : 'Kuat'}</span>`;
     return `<div class="mc ${m.keep ? 'on' : 'off'}" data-m="${m.id}">
       <div class="th">${m.thumb ? `<img src="${m.thumb}" alt="">` : '<img alt="" style="opacity:0">'}<span class="tag ${m.label}">${m.label}</span>
         <span class="chk" data-chk>${m.keep ? '✓' : ''}</span><span class="dur">${fmtDur(m.end - m.start)}</span></div>
@@ -315,7 +325,7 @@ document.querySelectorAll('[data-add]').forEach(b => b.onclick = async () => {
   const t = vid.currentTime, f = cur.f;
   const m = { id: S.nextId++, fileId: f.id, peak: t, start: Math.max(0, +(t - 8).toFixed(2)), end: Math.min(f.duration, +(t + 5).toFixed(2)),
               label: b.dataset.add, keep: true, manual: true, why: 'ditambah manual', score: 0 };
-  try { m.thumb = (await kickoffDanThumb(f.url, [t])).thumbs[t]; } catch (e) { /* tanpa gambar */ }
+  try { m.thumb = (await ambilThumb(f.url, [t]))[t]; } catch (e) { /* tanpa gambar */ }
   S.moments.push(m);
   cur.m = m; $('edMoment').style.display = ''; $('edAdd').style.display = 'none'; updEditor();
 });

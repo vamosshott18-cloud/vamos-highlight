@@ -10,3 +10,7 @@ riset/feat/
 riset/*.json
 riset/*.jpg
 riset/train_set.txt
+riset/vendorA/feat/
+riset/vendorA/proxy_360p/
+riset/vendorA/*.json
+riset/vendorA/tmp_*/

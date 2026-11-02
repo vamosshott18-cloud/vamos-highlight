@@ -44,10 +44,37 @@ Aturan baru di aplikasi: kandidat kuat otomatis diberi label **GOL** kalau 5 det
 
 Catatan: label pembandingnya masih dari mataku sendiri, belum dari videografernya. Ambangnya juga disetel dari 15 contoh saja. Lembar cek untuk temanmu ada di `riset/CEK_LABEL_GOL_SEMINUZ.jpg`.
 
+## Vendor kedua (2 Nov 2026, sore)
+
+Data: 82 clip vendor A (31 Okt 2026, iPhone 13), dengan label dari mereka sendiri: folder GOAL, CHANCE, dan KIPER (38 momen) serta MATCH (42 clip biasa). Ciri tiap clip diambil langsung dari Drive tanpa mengunduh file utuhnya (2 clip gagal karena kuota unduh Drive).
+
+**Temuan:**
+- Vendor A **tidak** menahan kamera selama 8 detik di akhir momen. Kameranya mengikuti pemain kembali ke tengah, lalu berhenti. Akibatnya aturan lama hanya menangkap 13 dari 38 momen mereka.
+- Ada tiga ciri yang berlaku di **kedua** vendor:
+  - kamera lebih tenang di 3–5 detik terakhir dibanding 20–8 detik sebelumnya,
+  - gerakan turun di akhir clip,
+  - jeda sebelum clip berikutnya lebih panjang, karena videografer berhenti sebentar setelah gol atau save.
+
+**Aturan baru:**
+- Momen **dicentang** kalau aturan lama terpenuhi **atau** skor pola (regresi logistik dari ciri di atas) ≥ 0.
+- Skor antara −1,2 dan 0 muncul sebagai **usulan** yang belum dicentang.
+
+| | Vendor A | Vendor B |
+|---|---|---|
+| Aturan lama | 13/38 | 19/19 (presisi 63%) |
+| Aturan baru, dicentang (skor validasi silang) | 24/38 (presisi 71%) | 19/19 (presisi 53%) |
+| Aturan baru, dicentang + usulan | **32/38** | 19/19 |
+| Model dilatih hanya di B, diuji di A (vendor yang belum pernah dilihat) | 30/38 (presisi 59%) | — |
+
+**Catatan:**
+- Untuk vendor B ada sekitar 5 clip tambahan yang perlu dibuang saat review.
+- Label GOL dari kick-off tidak membedakan GOAL dan CHANCE di vendor A (AUC 0,51). Lingkaran tengah mereka sering hanya terlihat sebagian. Jadi untuk vendor A, label GOL masih banyak dipilih manual.
+- File: `riset/analyze_ab.py`, `riset/train_ab.py`, `riset/vendorA/collect_stream.py`. Data ciri dan preview vendor A tidak ikut ke GitHub.
+
 ## Yang belum bisa
 
 - **GOL masih perlu dicek.** Sekitar 2 dari 11 gol tetap keluar sebagai REPLAY. Gol terakhir sebelum videografer berhenti merekam juga tidak punya clip berikutnya untuk diperiksa.
-- Aturan ini belajar dari **satu** videografer di **satu** malam. Kalau gaya rekamnya beda (misalnya merekam terus tanpa berhenti), perlu contoh baru.
+- Aturan ini sekarang belajar dari **dua** videografer, masing-masing satu malam. Videografer yang merekam terus tanpa berhenti tetap butuh contoh baru.
 
 ## File
 

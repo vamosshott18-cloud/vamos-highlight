@@ -410,10 +410,13 @@ def job_scan():
         groups = {}
         for f in files:
             groups.setdefault(f['match'], []).append(f)
+        gaps = {f['id']: (dt.datetime.fromisoformat(nx['start']) - dt.datetime.fromisoformat(f['start'])).total_seconds() - f['duration']
+                for f, nx in zip(files, files[1:])}
         for mi, fs in groups.items():
             base = detect.match_baseline([audios.get(f['id']) for f in fs])
             for f in fs:
-                for c in detect.find_moments(audios.get(f['id']), base, f['duration'], motions.get(f['id'])):
+                gap = gaps.get(f['id'])
+                for c in detect.find_moments(audios.get(f['id']), base, f['duration'], motions.get(f['id']), gap_after=gap):
                     c.update(id=P['next_id'], file_id=f['id'], manual=False)
                     P['next_id'] += 1
                     moments.append(c)

@@ -188,16 +188,43 @@ def match_baseline(audios):
     return {'full': percentile(allv, 0.5), 'loud': percentile(allv, 0.9)}
 
 
-def find_moments(audio, base, duration, motion=None, sens=1.0):
+# Second signal, learned from two vendors (SEMINUZ 30-10 + vendor A 31-10, 157 clips, riset/train_ab.py):
+# camera calmer in the last 3–5 s than in the 20–8 s before, and a long pause before the next clip.
+# Logistic score; ≥ POLA_KUAT → ticked candidate, ≥ POLA_USUL → unticked suggestion.
+# Cross-validated: vendor A 32/38 moments found (old rule 13/38), vendor B still 19/19.
+POLA = {'mu': {'hold3': 2.2713, 'hold5': 2.3682, 'drop': 0.126, 'lgap': 2.2868},
+        'sd': {'hold3': 1.6471, 'hold5': 1.3505, 'drop': 1.5293, 'lgap': 0.9466},
+        'w': {'hold3': -0.428, 'hold5': -0.3227, 'drop': 0.1991, 'lgap': 0.5766}, 'b': -0.7157}
+POLA_KUAT, POLA_USUL = 0.0, -1.2
+
+
+def pola_score(motion, duration, gap_after=None):
+    """Moment score from camera calming down at the end + the pause before the next clip (None = unknown)."""
+    if not motion or not motion['pan'] or duration < 8:
+        return None
+    fps, pan = motion['fps'], motion['pan']
+    seg = lambda a, b: (lambda p: sum(p) / len(p) if p else 0.0)(pan[max(0, int(a * fps)):max(0, int(b * fps))])
+    f = {'hold3': seg(duration - 3, duration), 'hold5': seg(duration - 5, duration),
+         'drop': seg(duration - 20, duration - 8) - seg(duration - 5, duration),
+         'lgap': math.log1p(max(0.0, min(gap_after, 300.0))) if gap_after is not None else POLA['mu']['lgap']}
+    return sum(POLA['w'][k] * (f[k] - POLA['mu'][k]) / POLA['sd'][k] for k in f) + POLA['b']
+
+
+def find_moments(audio, base, duration, motion=None, sens=1.0, gap_after=None):
     """Candidate moments in one clip: [{'peak','start','end','label','score','why','keep'}]."""
     out = []
     hold, build = end_hold(motion, duration)
-    if hold is not None and hold <= END_PAN_MAX and build >= END_BUILD_MIN and duration >= 8:
+    pola = pola_score(motion, duration, gap_after)
+    held = hold is not None and hold <= END_PAN_MAX and build >= END_BUILD_MIN and duration >= 8
+    if held or (pola is not None and pola >= POLA_USUL):
         peak = max(0.0, duration - 8)
+        kuat = held or pola >= POLA_KUAT
+        why = ('aksi lalu kamera ditahan di akhir clip' if held else
+               'kamera tenang di akhir + jeda panjang sesudahnya' if kuat else
+               'usulan dari pola: kamera agak tenang di akhir')
         out.append({'peak': round(peak, 2), 'start': round(max(0.0, peak - END_BEFORE), 2),
-                    'end': round(duration, 2), 'label': 'REPLAY', 'keep': True,
-                    'score': round(30 - 6 * hold, 1),
-                    'why': 'aksi lalu kamera ditahan di akhir clip'})
+                    'end': round(duration, 2), 'label': 'REPLAY', 'keep': kuat,
+                    'score': round(30 - 6 * hold if held else 10 + 5 * pola, 1), 'why': why})
     if not audio or not audio['full']:
         return out
     w = audio['win']

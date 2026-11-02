@@ -172,16 +172,41 @@ async function kickoffDanThumb(url, thumbTimes) {
   return { kickoff: Math.round(score * 100) / 100, thumbs };
 }
 
-function cariMomen(motion, duration) {
+/** Gambar mini (blob URL) di detik-detik yang diminta, untuk kartu momen. */
+async function ambilThumb(url, times) {
+  const v = videoEl(url);
+  await once(v, 'loadedmetadata');
+  const out = {};
+  for (const t of times) {
+    await seekTo(v, Math.min(Math.max(0, t), Math.max(0, v.duration - 0.1)));
+    const th = document.createElement('canvas'); th.height = 300; th.width = Math.round(300 * v.videoWidth / v.videoHeight);
+    th.getContext('2d').drawImage(v, 0, 0, th.width, th.height);
+    out[t] = await new Promise(r => th.toBlob(b => r(b ? URL.createObjectURL(b) : ''), 'image/jpeg', 0.8));
+  }
+  v.removeAttribute('src'); v.load();
+  return out;
+}
+
+/* Sinyal kedua, dipelajari dari dua vendor (157 clip): kamera lebih tenang di 3–5 dtk terakhir dibanding 20–8 dtk
+   sebelumnya, dan jeda panjang sebelum clip berikutnya. ≥ POLA_KUAT → dicentang, ≥ POLA_USUL → usulan (tidak dicentang). */
+const POLA = { mu: { hold3: 2.2713, hold5: 2.3682, drop: 0.126, lgap: 2.2868 }, sd: { hold3: 1.6471, hold5: 1.3505, drop: 1.5293, lgap: 0.9466 },
+               w: { hold3: -0.428, hold5: -0.3227, drop: 0.1991, lgap: 0.5766 }, b: -0.7157 };
+const POLA_KUAT = 0, POLA_USUL = -1.2;
+
+function cariMomen(motion, duration, gapAfter) {
   const pan = motion && motion.pan;
   if (!pan || !pan.length || duration < 8) return null;
-  const last = pan.slice(-8 * MFPS), build = pan.slice(Math.max(0, pan.length - 20 * MFPS), Math.max(0, pan.length - 8 * MFPS));
-  const hold = last.reduce((a, b) => a + b, 0) / last.length;
-  const bld = build.length ? build.reduce((a, b) => a + b, 0) / build.length : 0;
-  if (hold > END_PAN_MAX || bld < END_BUILD_MIN) return null;
-  const peak = Math.max(0, duration - 8);
-  return { peak, start: Math.max(0, peak - END_BEFORE), end: duration, label: 'REPLAY', keep: true,
-           score: 30 - 6 * hold, why: 'aksi lalu kamera ditahan di akhir clip' };
+  const seg = (a, b) => { const p = pan.slice(Math.max(0, Math.floor(a * MFPS)), Math.max(0, Math.floor(b * MFPS))); return p.length ? p.reduce((x, y) => x + y, 0) / p.length : 0; };
+  const hold = seg(duration - 8, duration), bld = seg(duration - 20, duration - 8);
+  const held = hold <= END_PAN_MAX && bld >= END_BUILD_MIN;
+  const f = { hold3: seg(duration - 3, duration), hold5: seg(duration - 5, duration), drop: bld - seg(duration - 5, duration),
+              lgap: gapAfter == null ? POLA.mu.lgap : Math.log1p(Math.max(0, Math.min(gapAfter, 300))) };
+  const pola = Object.keys(f).reduce((a, k) => a + POLA.w[k] * (f[k] - POLA.mu[k]) / POLA.sd[k], POLA.b);
+  if (!held && pola < POLA_USUL) return null;
+  const kuat = held || pola >= POLA_KUAT, peak = Math.max(0, duration - 8);
+  return { peak, start: Math.max(0, peak - END_BEFORE), end: duration, label: 'REPLAY', keep: kuat,
+           score: held ? 30 - 6 * hold : 10 + 5 * pola,
+           why: held ? 'aksi lalu kamera ditahan di akhir clip' : kuat ? 'kamera tenang di akhir + jeda panjang sesudahnya' : 'usulan dari pola: kamera agak tenang di akhir' };
 }
 
 /** Beri label GOL kalau clip berikutnya di match yang sama dimulai dari kick-off. */
