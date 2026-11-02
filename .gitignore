@@ -1,0 +1,12 @@
+# hasil & kerja lokal
+kerja/
+HASIL/
+__pycache__/
+.DS_Store
+
+# data riset dari footage videografer (jangan dipublikasikan)
+riset/proxy_360p/
+riset/feat/
+riset/*.json
+riset/*.jpg
+riset/train_set.txt

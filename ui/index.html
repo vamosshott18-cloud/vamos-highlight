@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vamos Highlight</title>
+<link rel="stylesheet" href="/ui/fonts.css">
+<style>
+:root{
+  --bg:#0B1022; --panel:#131A34; --panel2:#1A2245; --line:#27305A; --line2:#343F72; --ink:#EEF1F8; --muted:#97A0C2; --dim:#6B7399;
+  --volt:#D7FF3C; --cyan:#38D9FF; --red:#FF5A4E; --navy:#0B1022;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Space Grotesk',system-ui,sans-serif}
+.disp{font-family:Archivo;font-style:italic;font-weight:900;font-stretch:112%}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:0;z-index:15;background:#0B1022f2;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand b{font:italic 900 21px/1 Archivo;font-stretch:118%;letter-spacing:-.5px}
+.brand b span{color:var(--volt)}
+.pname{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pname label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+#pname{background:var(--panel);border:1px solid var(--line);color:var(--ink);font:600 15px 'Space Grotesk';padding:7px 11px;border-radius:9px;width:240px}
+#pname:focus{outline:none;border-color:var(--volt)}
+
+/* ---------- layout ---------- */
+.app{max-width:1240px;margin:0 auto;padding:24px 20px 140px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:960px){.app{grid-template-columns:1fr;gap:16px;padding-top:14px}}
+
+/* stepper rail */
+.rail{position:sticky;top:80px;display:flex;flex-direction:column;gap:2px}
+.rail h4{margin:0 0 10px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.rs{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;padding:10px;border-radius:12px;text-decoration:none;color:inherit;position:relative}
+.rs:hover{background:var(--panel)}
+.rs .dot{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font:900 14px Archivo;border:1.5px solid var(--line2);color:var(--muted);transform:skewX(-8deg)}
+.rs .t{font-weight:600;font-size:14px;line-height:1.25;padding-top:1px}
+.rs .s{font-size:12.5px;color:var(--muted);line-height:1.35;margin-top:2px}
+.rs:not(:last-child)::after{content:"";position:absolute;left:24px;top:44px;bottom:-6px;width:1.5px;background:var(--line)}
+.rs.done .dot{background:#D7FF3C1f;border-color:#D7FF3C66;color:var(--volt)}
+.rs.done:not(:last-child)::after{background:#D7FF3C55}
+.rs.current{background:var(--panel)}
+.rs.current .dot{background:var(--volt);border-color:var(--volt);color:var(--navy)}
+.rs.current .t{color:var(--volt)}
+.rs.locked{opacity:.5}
+@media (max-width:960px){
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:6px}
+  .rail h4{display:none}
+  .rs{grid-template-columns:26px auto;min-width:max-content;padding:8px 10px;align-items:center}
+  .rs .dot{width:26px;height:26px;font-size:12px}
+  .rs .s,.rs::after{display:none}
+}
+
+/* steps */
+main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:18px;scroll-margin-top:84px;transition:border-color .2s}
+.step.current{border-color:#D7FF3C88;box-shadow:0 0 0 4px #D7FF3C0f}
+.sh{display:flex;align-items:center;gap:14px;padding:18px 22px}
+.sh .n{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--panel2);border:1.5px solid var(--line2);color:var(--muted);font:900 16px Archivo;transform:skewX(-10deg)}
+.step.current .sh .n{background:var(--volt);border-color:var(--volt);color:var(--navy)}
+.step.done .sh .n{background:#D7FF3C1f;border-color:#D7FF3C66;color:var(--volt)}
+.sh h2{margin:0;font:italic 900 21px/1.15 Archivo;font-stretch:112%;letter-spacing:-.2px}
+.sh .lead{margin:3px 0 0;color:var(--muted);font-size:14px}
+.sh .side{margin-left:auto;display:flex;gap:8px;align-items:center;flex:none}
+.sb{padding:0 22px 22px}
+.step.collapsed .sb{display:none}
+.step.collapsed .sh .lead{color:var(--ink)}
+.step.locked{opacity:.55}
+.step.locked .sb{display:none}
+.lockmsg{font-size:13px;color:var(--muted)}
+.edit{background:none;border:1px solid var(--line2);color:var(--muted);font-size:13px;padding:5px 12px}
+
+/* blocks */
+.label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px}
+.src{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch}
+@media (max-width:760px){.src{grid-template-columns:1fr}.or{display:none}}
+.box{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px}
+.box h3{margin:0 0 4px;font-size:16px}
+.box p{margin:0 0 12px;font-size:13px;color:var(--muted)}
+.or{display:grid;place-items:center;color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--volt)}
+input[type=text]{width:100%}
+textarea{width:100%;min-height:118px;font:14px/1.55 ui-monospace,Menlo,monospace;resize:vertical}
+button{font:600 14px 'Space Grotesk';border:1px solid var(--line2);background:var(--panel2);color:var(--ink);padding:9px 15px;border-radius:10px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--volt)}
+button.primary{background:var(--volt);color:var(--navy);border-color:var(--volt)}
+button.primary:hover:not(:disabled){filter:brightness(1.07)}
+button.big{font-size:16px;padding:13px 22px;border-radius:12px}
+button.ghost{background:none;border-color:transparent;color:var(--muted)}
+button.ghost:hover:not(:disabled){color:var(--ink);border-color:var(--line2)}
+button.danger{background:none;border-color:transparent;color:var(--red)}
+button.danger:hover:not(:disabled){border-color:var(--red)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.small{font-size:13px;color:var(--muted)}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:30px;padding:3px 11px;font-size:13px}
+.err{color:var(--red)} .ok{color:var(--volt)}
+.note{display:flex;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note b{color:var(--ink);font-weight:600}
+.kbd{font:12px ui-monospace,Menlo,monospace;background:var(--panel2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--ink)}
+.tag{font:900 11px Archivo;padding:3px 8px;border-radius:5px;letter-spacing:.5px;transform:skewX(-8deg);display:inline-block}
+.tag.GOL{background:var(--volt);color:var(--navy)} .tag.REPLAY{background:var(--cyan);color:var(--navy)}
+#driveFolders label{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:9px;margin-top:6px;background:var(--bg);cursor:pointer;font-size:14px}
+#driveFolders label .small{margin-left:auto}
+.srcok{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;padding:12px 14px;border-radius:12px;background:#D7FF3C10;border:1px solid #D7FF3C40}
+
+/* job bar */
+#jobbar{position:fixed;left:0;right:0;bottom:0;background:#060914f2;border-top:1px solid var(--line);padding:12px 20px;display:none;z-index:20;backdrop-filter:blur(6px)}
+#jobbar .in{max-width:1240px;margin:0 auto;display:flex;gap:16px;align-items:center}
+#jobbar .bar{flex:1;height:8px;background:var(--panel2);border-radius:8px;overflow:hidden}
+#jobbar .bar i{display:block;height:100%;background:var(--volt);width:0;transition:width .4s}
+#jobbar .msg{flex:2;font-size:14px}
+
+/* review */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font:italic 900 30px/1 Archivo;font-stretch:112%}
+.stat span{font-size:12.5px;color:var(--muted)}
+.stat.main{background:#D7FF3C14;border-color:#D7FF3C55}
+.stat.main b{color:var(--volt)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 6px}
+.legend i{font-style:normal;display:inline-flex;gap:6px;align-items:center}
+.match{border:1px solid var(--line);border-radius:16px;margin-top:16px;overflow:hidden;background:var(--bg)}
+.mhead{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;padding:14px 16px 4px}
+.mhead b{font:italic 900 19px Archivo;font-stretch:112%}
+.mhead .cnt{margin-left:auto;display:flex;gap:8px;align-items:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;padding:12px 16px 16px}
+.mc{background:var(--panel);border:2px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;transition:border-color .15s,transform .15s}
+.mc:hover{transform:translateY(-2px);border-color:var(--line2)}
+.mc.on{border-color:#D7FF3C99}
+.mc.off img{opacity:.35;filter:grayscale(.7)}
+.mc .th{position:relative}
+.mc img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#000}
+.mc .play{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .15s;font-size:30px;text-shadow:0 2px 10px #000}
+.mc:hover .play{opacity:1}
+.mc .th .tag{position:absolute;top:8px;left:8px}
+.mc .dur{position:absolute;bottom:8px;right:8px;background:#000b;font-size:12px;padding:1px 7px;border-radius:5px}
+.mc .chk{position:absolute;top:7px;right:7px;width:28px;height:28px;border-radius:8px;border:2px solid #fff9;background:#0008;display:grid;place-items:center;font-weight:900;color:var(--navy)}
+.mc.on .chk{background:var(--volt);border-color:var(--volt)}
+.mc .meta{padding:9px 10px 4px}
+.mc .meta .clk{font:700 15px 'Space Grotesk'}
+.mc .fn{display:block;font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:20px;margin-top:5px}
+.pill.kuat{background:#D7FF3C1c;color:var(--volt)} .pill.lemah{background:#97A0C222;color:var(--muted)} .pill.manual{background:#38D9FF1c;color:var(--cyan)}
+.mc .lb{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px 10px}
+.mc .lb button{padding:5px 0;font:900 11px Archivo;letter-spacing:.5px;border-radius:7px;background:var(--bg);color:var(--muted)}
+.mc .lb button.on.GOL{background:var(--volt);color:var(--navy);border-color:var(--volt)}
+.mc .lb button.on.REPLAY{background:var(--cyan);color:var(--navy);border-color:var(--cyan)}
+.empty{color:var(--muted);padding:6px 16px 16px}
+.sub{padding:4px 16px 0;font-size:13px;font-weight:600;color:var(--muted)}
+.sub span{font-weight:400;color:var(--dim);margin-left:6px}
+.cards.dim{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.cards.dim .mc{background:var(--bg)}
+.cards.dim .lb,.cards.dim .pill{display:none}
+.cards.dim .meta{padding-bottom:9px}
+.emptybig{text-align:center;padding:36px 16px;color:var(--muted);border:1.5px dashed var(--line2);border-radius:14px}
+details.clips{border-top:1px solid var(--line)}
+details.clips summary{padding:12px 16px;cursor:pointer;color:var(--muted);font-size:14px;list-style:none}
+details.clips summary::-webkit-details-marker{display:none}
+details.clips summary::before{content:"+ ";color:var(--volt);font-weight:700}
+details.clips[open] summary::before{content:"− "}
+.clip{display:grid;grid-template-columns:170px 1fr 90px 150px;gap:12px;align-items:center;padding:8px 16px;border-top:1px solid #ffffff0a;font-size:13px}
+.clip canvas{width:100%;height:26px}
+@media (max-width:720px){.clip{grid-template-columns:1fr 1fr}.cards,.cards.dim{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.sb{padding:0 14px 16px}.sh{padding:16px 14px}.mhead .cnt{margin-left:0}}
+
+/* export */
+.fmt{display:grid;grid-template-columns:repeat(2,minmax(0,200px));gap:12px;margin-bottom:12px}
+.fmt label{display:flex;gap:12px;align-items:center;padding:14px;border:2px solid var(--line);border-radius:14px;background:var(--panel2);cursor:pointer}
+.fmt label:has(input:checked){border-color:var(--volt);background:#D7FF3C10}
+.fmt input{display:none}
+.fmt .ic{flex:none;border:2px solid var(--muted);border-radius:4px}
+.fmt label:has(input:checked) .ic{border-color:var(--volt);background:#D7FF3C33}
+.fmt b{display:block;font-size:15px;color:var(--ink)}
+.fmt span{font-size:12.5px;color:var(--muted)}
+.chk2{display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer}
+.chk2 input{width:17px;height:17px;accent-color:var(--volt)}
+.go{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.done-box{margin-top:16px;padding:14px 16px;border-radius:12px;background:#D7FF3C10;border:1px solid #D7FF3C40;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.done-box code{font-size:12.5px;color:var(--muted);word-break:break-all}
+
+/* editor */
+#ed{position:fixed;inset:0;background:#000d;display:none;z-index:30;align-items:center;justify-content:center;padding:16px}
+#ed .pan{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:1020px;width:100%;max-height:96vh;overflow:auto;display:grid;grid-template-columns:minmax(220px,360px) 1fr;gap:22px;padding:20px}
+@media (max-width:760px){#ed .pan{grid-template-columns:1fr}}
+#ed video{width:100%;max-height:74vh;background:#000;border-radius:12px;display:block}
+#ed canvas{width:100%;height:72px;background:var(--bg);border-radius:9px;cursor:pointer;display:block}
+.edh{display:flex;align-items:flex-start;gap:12px}
+.edh h3{margin:0;font:italic 900 22px/1.1 Archivo;font-stretch:112%}
+.edh .small{margin-top:4px}
+.edh button{margin-left:auto;flex:none}
+.grp{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{padding:12px;font:900 16px Archivo;letter-spacing:.5px;border-width:2px}
+.seg button.on.GOL{background:var(--volt);color:var(--navy);border-color:var(--volt)} .seg button.on.REPLAY{background:var(--cyan);color:var(--navy);border-color:var(--cyan)}
+.trim{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.trim .box{padding:10px 12px}
+.trim .v{font:700 18px 'Space Grotesk';margin:2px 0 8px}
+.trim .row button{padding:6px 10px;font-size:13px}
+.edfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.edfoot .r{margin-left:auto;display:flex;gap:8px}
+/* lock screen */
+#kunci{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;place-items:center;padding:20px}
+#kunci .kb{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px}
+#kunci .brand{margin-bottom:22px}
+#kunci h2{margin:0 0 6px;font:italic 900 23px/1.15 Archivo;font-stretch:112%}
+#kunci p{margin:0 0 16px;color:var(--muted);font-size:14px}
+#kunci .dev{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;margin-bottom:18px}
+#kodeIn{width:100%;font:700 28px/1 ui-monospace,Menlo,monospace;letter-spacing:10px;text-align:center;padding:12px;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:12px}
+#kodeIn:focus{outline:none;border-color:var(--volt)}
+#kunci .msg{min-height:20px;font-size:13px;margin:10px 0 0}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="brand">
+    <svg width="40" height="33" viewBox="0 0 120 100"><path d="M24 0 H120 L96 100 H0 Z" fill="#D7FF3C"/><text x="59" y="76" text-anchor="middle" fill="#0B1022" style="font-family:Archivo;font-weight:900;font-style:italic;font-stretch:112%;font-size:70px;letter-spacing:-3px">VS</text></svg>
+    <b>VAMOS <span>HIGHLIGHT</span></b>
+  </div>
+  <div class="pname"><label for="pname">Nama event</label><input id="pname" title="Jadi nama folder hasil"></div>
+</div></div>
+
+<div class="app">
+<nav class="rail" id="rail">
+  <h4>Alur kerja</h4>
+  <a class="rs" href="#s1" data-s="1"><span class="dot">1</span><span><div class="t">Ambil video</div><div class="s"></div></span></a>
+  <a class="rs" href="#s2" data-s="2"><span class="dot">2</span><span><div class="t">Atur match &amp; scan</div><div class="s"></div></span></a>
+  <a class="rs" href="#s3" data-s="3"><span class="dot">3</span><span><div class="t">Pilih momen</div><div class="s"></div></span></a>
+  <a class="rs" href="#s4" data-s="4"><span class="dot">4</span><span><div class="t">Buat clip</div><div class="s"></div></span></a>
+</nav>
+
+<main>
+<!-- 1 -->
+<section class="step" id="s1">
+  <div class="sh"><span class="n">1</span><div><h2>Ambil video</h2><p class="lead" data-lead="Video mentah dari Google Drive atau dari folder di Mac."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <div class="src">
+      <div class="box">
+        <h3>Google Drive</h3>
+        <p>Akses folder harus <b>siapa saja yang memiliki link</b>.</p>
+        <div class="row" style="flex-wrap:nowrap"><input type="text" id="driveUrl" placeholder="Tempel link folder…"><button class="primary" id="btnDriveList" style="flex:none">Cek isi</button></div>
+        <div class="small" id="driveMsg" style="margin-top:10px"></div>
+        <div id="driveFolders"></div>
+        <button class="primary" id="btnDrive" style="display:none;margin-top:12px;width:100%">Unduh folder yang dicentang</button>
+      </div>
+      <div class="or">atau</div>
+      <div class="box">
+        <h3>Folder di Mac</h3>
+        <p>Video tidak dipindah atau diubah, hanya dibaca.</p>
+        <button id="btnPick">Pilih folder…</button>
+      </div>
+    </div>
+    <div id="srcInfo"></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="step" id="s2">
+  <div class="sh"><span class="n">2</span><div><h2>Atur match &amp; scan</h2><p class="lead" data-lead="Tulis jadwal tiap match, lalu biarkan aplikasi mencari momennya."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <div class="two">
+      <div>
+        <span class="label">Jadwal match <span style="text-transform:none;letter-spacing:0;font-weight:400">— opsional</span></span>
+        <textarea id="sched" placeholder="21.00 - 21.15 Match 1&#10;21.20 - 21.35 Match 2&#10;21.40 - 21.55 Match 3"></textarea>
+        <div class="row" style="margin-top:8px;justify-content:space-between">
+          <span class="small">Satu baris = satu match. Kosongkan kalau semua satu pertandingan.</span>
+          <label class="small">Toleransi <select id="tol"><option>0</option><option>1</option><option selected>2</option><option>5</option></select> mnt</label>
+        </div>
+        <div class="row" id="schedChips" style="margin-top:10px"></div>
+        <button id="btnSched" style="margin-top:10px;display:none">Terapkan jadwal baru</button>
+      </div>
+      <div>
+        <span class="label">Yang dilakukan scan</span>
+        <div class="note" style="flex-direction:column;gap:8px">
+          <div><b>1.</b> Membaca jam rekam tiap video dan membaginya ke match.</div>
+          <div><b>2.</b> Mencari clip yang kameranya <b>ditahan diam di akhir</b> (kebiasaan videografer setelah gol/save).</div>
+          <div><b>3.</b> Membuat preview supaya bisa dicek di langkah 3.</div>
+        </div>
+        <button class="primary big" id="btnScan" style="margin-top:14px;width:100%">Mulai scan</button>
+        <p class="small" id="scanInfo" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="step" id="s3">
+  <div class="sh"><span class="n">3</span><div><h2>Pilih momen</h2><p class="lead" data-lead="Cek kandidat, beri label GOL kalau bola masuk, buang yang bukan momen."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <div class="stats" id="summary"></div>
+    <div class="legend">
+      <i><span style="display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;background:var(--volt);color:var(--navy);font-size:11px;font-weight:900">✓</span> ikut dibuat clip</i>
+      <i><span class="tag GOL">GOL</span> otomatis kalau clip berikutnya mulai dari kick-off · selain itu klik sendiri</i>
+      <i>Klik gambar untuk memutar &amp; mengatur potongan</i>
+    </div>
+    <div id="review"></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="step" id="s4">
+  <div class="sh"><span class="n">4</span><div><h2>Buat clip</h2><p class="lead" data-lead="Setiap momen diberi bumper Enerjik, watermark Vamos Shott, dan volume diratakan."></p></div><div class="side"></div></div>
+  <div class="sb">
+    <span class="label">Format</span>
+    <div class="fmt">
+      <label><input type="checkbox" id="oP"><svg class="ic" width="20" height="32"></svg><span><b>Portrait 9:16</b><span>Reels, TikTok, Shorts</span></span></label>
+      <label><input type="checkbox" id="oL"><svg class="ic" width="34" height="20"></svg><span><b>Landscape 16:9</b><span>YouTube, layar lebar</span></span></label>
+    </div>
+    <label class="chk2"><input type="checkbox" id="oC"> Susun juga video mentah ke folder <b>VIDEO FULL MATCH</b> per match</label>
+    <div class="go">
+      <button class="primary big" id="btnExport">Buat clip momen</button>
+      <span class="small" id="exportInfo"></span>
+    </div>
+    <div id="outInfo"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<div id="kunci"><div class="kb">
+  <div class="brand">
+    <svg width="40" height="33" viewBox="0 0 120 100"><path d="M24 0 H120 L96 100 H0 Z" fill="#D7FF3C"/><text x="59" y="76" text-anchor="middle" fill="#0B1022" style="font-family:Archivo;font-weight:900;font-style:italic;font-stretch:112%;font-size:70px;letter-spacing:-3px">VS</text></svg>
+    <b>VAMOS <span>HIGHLIGHT</span></b>
+  </div>
+  <h2 id="kTitle">Daftarkan perangkat ini</h2>
+  <p id="kLead">Perangkat baru perlu kode sekali saja. Kodenya dikirim ke email pemilik Vamos Highlight.</p>
+  <div class="dev">💻 <b id="kDev"></b></div>
+  <div id="kStep1"><button class="primary big" id="kKirim" style="width:100%">Kirim kode ke email</button></div>
+  <div id="kStep2" style="display:none">
+    <input id="kodeIn" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <button class="primary big" id="kMasuk" style="width:100%;margin-top:12px">Masuk</button>
+    <button class="ghost" id="kUlang" style="width:100%;margin-top:6px">Kirim ulang kode</button>
+  </div>
+  <div class="msg small" id="kMsg"></div>
+</div></div>
+
+<div id="jobbar"><div class="in"><div class="msg" id="jobmsg"></div><div class="bar"><i id="jobfill"></i></div><div class="small" id="jobpct"></div><button id="btnCancel">Batal</button></div></div>
+
+<div id="ed"><div class="pan">
+  <div><video id="vid" controls playsinline></video></div>
+  <div>
+    <div class="edh"><div><h3 id="edTitle"></h3><div class="small" id="edSub"></div></div><button id="edClose" class="ghost">Tutup ✕</button></div>
+    <div id="edMoment">
+      <div class="grp">
+        <span class="label">Label</span>
+        <div class="seg"><button data-l="GOL" class="GOL">GOL</button><button data-l="REPLAY" class="REPLAY">REPLAY</button></div>
+      </div>
+      <div class="grp">
+        <div class="row" style="justify-content:space-between"><span class="label" style="margin:0">Potongan</span><span class="small" id="edLen"></span></div>
+        <canvas id="wave" width="900" height="140" title="Klik untuk lompat ke titik itu" style="margin-top:8px"></canvas>
+        <div class="small" style="margin-top:5px">Area terang = bagian yang dipotong · garis merah = posisi video · klik grafik untuk lompat</div>
+        <div class="trim">
+          <div class="box"><span class="small">Awal</span><div class="v" id="edIn"></div>
+            <div class="row"><button data-n="start:-1">−1 dtk</button><button data-n="start:1">+1 dtk</button><button id="setIn" title="Pakai posisi video sekarang">⟦ di sini</button></div></div>
+          <div class="box"><span class="small">Akhir</span><div class="v" id="edOut"></div>
+            <div class="row"><button data-n="end:-1">−1 dtk</button><button data-n="end:1">+1 dtk</button><button id="setOut" title="Pakai posisi video sekarang">di sini ⟧</button></div></div>
+        </div>
+        <button id="playSeg" class="primary" style="margin-top:12px;width:100%">▶ Putar potongan</button>
+      </div>
+      <div class="edfoot grp">
+        <label class="chk2"><input type="checkbox" id="edKeep"> Ikut dibuat clip</label>
+        <div class="r"><button id="delM" class="danger">Hapus momen</button></div>
+      </div>
+      <div class="small" style="margin-top:12px"><span class="kbd">Spasi</span> putar/jeda · <span class="kbd">←</span><span class="kbd">→</span> 2 dtk (Shift: 0,2) · <span class="kbd">Esc</span> tutup</div>
+    </div>
+    <div id="edAdd" style="display:none">
+      <div class="grp">
+        <p class="small" style="margin-top:0">Putar videonya, berhenti tepat di momen yang terlewat, lalu tambahkan:</p>
+        <canvas id="wave2" width="900" height="140" title="Klik untuk lompat"></canvas>
+        <div class="seg" style="margin-top:12px"><button class="GOL" data-add="GOL">+ GOL di sini</button><button class="REPLAY" data-add="REPLAY">+ REPLAY di sini</button></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+'use strict';
+let S = null, cur = null;   // state, editor context {f, m}
+const opened = new Set();   // done steps the user re-opened with "Ubah"
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const fmtDur = s => { s = Math.round(s||0); return `${Math.floor(s/60)}:${pad(s%60)}`; };
+const fmtSize = b => b > 1e9 ? (b/1e9).toFixed(1).replace('.',',')+' GB' : (b/1e6).toFixed(0)+' MB';
+const clockAt = (f, t) => { const d = new Date(f.start); d.setSeconds(d.getSeconds() + Math.round(t||0)); return `${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`; };
+const hm = s => s.replace(':','.');
+const kind = m => m.manual ? ['manual','Manual'] : /^usulan/.test(m.why||'') ? ['lemah','Usulan'] : /kick-off/.test(m.why||'') ? ['kuat','Kuat · ada kick-off'] : ['kuat','Kuat'];
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const j = await r.json();
+  if (j.kunci) { bukaKunci(); return j; }
+  if (j.ok === false && !j.cancel) { alert(j.error || 'Gagal'); }
+  if (j.state) { S = j.state; render(); }
+  if (j.state && j.state.job.running) poll();
+  return j;
+}
+async function refresh(){ const j = await (await fetch('/api/state')).json(); if (j.kunci) return bukaKunci(); S = j; render(); if (S.job.running) poll(); }
+
+let polling = false;
+async function poll(){
+  if (polling) return; polling = true;
+  while (true) {
+    const j = await (await fetch('/api/job')).json();
+    showJob(j);
+    if (!j.running) break;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  polling = false; await refresh();
+}
+function showJob(j){
+  const bar = $('jobbar');
+  if (!j.kind) { bar.style.display='none'; return; }
+  bar.style.display='block';
+  $('jobfill').style.width = Math.round((j.progress||0)*100)+'%';
+  $('jobpct').textContent = j.running ? Math.round((j.progress||0)*100)+'%' : '';
+  $('jobmsg').innerHTML = j.error ? `<span class="err">Gagal: ${esc(j.error)}</span>` : (j.running ? esc(j.msg) : `<span class="ok">✓ ${esc(j.msg)}</span>`);
+  ['btnDrive','btnPick','btnScan','btnExport'].forEach(id => $(id).disabled = j.running);
+  $('btnCancel').style.display = j.running ? '' : 'none';
+}
+
+/* ---------- step states ---------- */
+function steps(){
+  const fs = S.files || [], kept = S.moments.filter(m => m.keep);
+  const gol = kept.filter(m => m.label === 'GOL').length;
+  const nMatch = new Set(fs.map(f => f.match)).size;
+  const cur = !fs.length ? 1 : !S.scanned ? 2 : !S.output ? 3 : 4;
+  return [
+    {ready:true, done:fs.length > 0,
+     sum: fs.length ? `${fs.length} video · ${fmtSize(fs.reduce((a,f)=>a+f.size,0))} · ${S.source.type==='drive'?'Google Drive':'Mac'}` : 'Belum ada video'},
+    {ready:fs.length > 0, done:S.scanned,
+     sum: S.scanned ? `${nMatch} match · ${S.moments.length} kandidat` : fs.length ? 'Siap di-scan' : 'Tunggu langkah 1',
+     lock:'Ambil video dulu di langkah 1.'},
+    {ready:S.scanned, done:S.scanned && !!S.output, open:true,
+     sum: S.scanned ? `${kept.length} dipakai · ${gol} GOL` : 'Tunggu scan', lock:'Muncul setelah scan di langkah 2.'},
+    {ready:S.scanned, done:!!S.output, open:true,
+     sum: S.output ? 'Clip sudah dibuat ✓' : S.scanned ? `${kept.length} clip siap dibuat` : 'Tunggu scan', lock:'Muncul setelah scan di langkah 2.'},
+  ].map((s, i) => ({...s, n:i+1, current:cur === i+1}));
+}
+
+function renderSteps(){
+  for (const s of steps()) {
+    const sec = $('s'+s.n), rs = document.querySelector(`.rs[data-s="${s.n}"]`);
+    const collapsed = s.done && !s.open && !s.current && !opened.has(s.n);
+    sec.className = 'step' + (s.current ? ' current' : '') + (s.done ? ' done' : '') + (!s.ready ? ' locked' : '') + (collapsed ? ' collapsed' : '');
+    rs.className = 'rs' + (s.current ? ' current' : '') + (s.done && !s.current ? ' done' : '') + (!s.ready ? ' locked' : '');
+    rs.querySelector('.dot').textContent = s.done && !s.current ? '✓' : s.n;
+    rs.querySelector('.s').textContent = s.sum;
+    sec.querySelector('.sh .n').textContent = s.done && !s.current ? '✓' : s.n;
+    const lead = sec.querySelector('.lead');
+    lead.textContent = !s.ready ? s.lock : collapsed ? s.sum : lead.dataset.lead;
+    const side = sec.querySelector('.side');
+    side.innerHTML = s.done && !s.open && !s.current ? `<button class="edit" data-tog="${s.n}">${collapsed ? 'Ubah' : 'Tutup'}</button>` : '';
+  }
+  document.querySelectorAll('[data-tog]').forEach(b => b.onclick = () => {
+    const n = +b.dataset.tog; opened.has(n) ? opened.delete(n) : opened.add(n); renderSteps();
+  });
+}
+
+function render(){
+  if (!S) return;
+  if (document.activeElement !== $('pname')) $('pname').value = S.name || '';
+  renderSteps();
+  // 1 source
+  const fs = S.files || [];
+  $('srcInfo').innerHTML = fs.length
+    ? `<div class="srcok"><span class="ok" style="font-weight:700">✓ ${fs.length} video siap</span><span class="small">${fmtSize(fs.reduce((a,f)=>a+f.size,0))} · ${S.source.type==='drive'?'Google Drive':'Folder Mac'}</span><span class="small" style="word-break:break-all">${esc(S.source.url||S.source.dir)}</span></div>`
+    : '';
+  // 2 schedule + scan
+  if (document.activeElement !== $('sched') && !$('sched').dataset.touched)
+    $('sched').value = (S.schedule||[]).map(m => `${hm(m.start)} - ${hm(m.end)} ${m.name}`).join('\n');
+  $('tol').value = S.tolerance ?? 2;
+  $('schedChips').innerHTML = (S.schedule||[]).map(m => `<span class="chip"><b>${esc(m.name)}</b> ${hm(m.start)}–${hm(m.end)}</span>`).join('');
+  $('btnSched').style.display = S.scanned ? '' : 'none';
+  $('btnScan').disabled = !fs.length || S.job.running;
+  $('btnScan').textContent = S.scanned ? 'Scan ulang' : 'Mulai scan';
+  $('btnScan').classList.toggle('primary', !S.scanned);
+  $('scanInfo').textContent = S.scanned ? 'Momen yang kamu tambah manual tetap disimpan saat scan ulang.' : fs.length ? `${fs.length} video siap di-scan.` : '';
+  renderReview();
+  // 4 export
+  const kept = S.moments.filter(m => m.keep).length;
+  $('oP').checked = !!S.options.portrait; $('oL').checked = !!S.options.landscape; $('oC').checked = !!S.options.copy_full;
+  const nf = (S.options.portrait ? 1 : 0) + (S.options.landscape ? 1 : 0);
+  $('btnExport').disabled = !S.scanned || !kept || !nf || S.job.running;
+  $('btnExport').textContent = kept ? `Buat ${kept} clip momen` : 'Buat clip momen';
+  $('exportInfo').textContent = !kept ? 'Centang minimal satu momen di langkah 3.' : !nf ? 'Pilih minimal satu format.' : `${kept * nf} file video${nf > 1 ? ` (${kept} × 2 format)` : ''}`;
+  $('outInfo').innerHTML = S.output ? `<div class="done-box"><span class="ok" style="font-weight:700">✓ Clip sudah dibuat</span><code>${esc(S.output)}</code><button class="primary" id="btnOpen" style="margin-left:auto">Buka folder hasil</button></div>` : '';
+  if (S.output) $('btnOpen').onclick = () => api('/api/open', {});
+}
+
+function renderReview(){
+  const box = $('review');
+  if (!S.scanned) { box.innerHTML = ''; $('summary').innerHTML=''; return; }
+  const names = S.match_names;
+  const groups = names.map((n,i) => ({i, name:n, m:S.schedule[i], files:[], moments:[]}));
+  const out = {i:-1, name:'Di luar jadwal', files:[], moments:[]};
+  const byId = {};
+  for (const f of S.files) { byId[f.id] = f; (f.match >= 0 ? groups[f.match] : out).files.push(f); }
+  for (const m of S.moments) { const f = byId[m.file_id]; if (f) (f.match >= 0 ? groups[f.match] : out).moments.push(m); }
+  const all = out.files.length ? groups.concat(out) : groups;
+  const kept = S.moments.filter(m => m.keep);
+  const off = S.moments.length - kept.length;
+  $('summary').innerHTML = `
+    <div class="stat main"><b>${kept.length}</b><span>momen dipakai</span></div>
+    <div class="stat"><b style="color:var(--volt)">${kept.filter(m=>m.label==='GOL').length}</b><span>berlabel GOL</span></div>
+    <div class="stat"><b style="color:var(--cyan)">${kept.filter(m=>m.label==='REPLAY').length}</b><span>berlabel REPLAY</span></div>
+    <div class="stat"><b style="color:var(--muted)">${off}</b><span>tidak dipakai / usulan</span></div>`;
+  if (!S.moments.length && !S.files.length) { box.innerHTML = '<div class="emptybig">Tidak ada video.</div>'; return; }
+  const opts = sel => names.map((n,i)=>`<option value="${i}" ${sel===i?'selected':''}>${esc(n)}</option>`).join('') + `<option value="-1" ${sel===-1?'selected':''}>Di luar jadwal</option>`;
+  const card = m => { const f = byId[m.file_id], [kc, kt] = kind(m); return `
+        <div class="mc ${m.keep?'on':'off'}" data-m="${m.id}">
+          <div class="th"><img loading="lazy" src="/thumb?id=${f.id}&t=${m.peak.toFixed(1)}" alt=""><span class="play">▶</span>
+            <span class="tag ${m.label}">${m.label}</span><span class="chk" data-chk title="${m.keep?'Jangan pakai':'Pakai'} momen ini">${m.keep?'✓':''}</span><span class="dur">${fmtDur(m.end-m.start)}</span></div>
+          <div class="meta"><span class="clk">${clockAt(f, m.peak)}</span><span class="fn" title="${esc(m.why)}">${esc(f.name)}</span><span class="pill ${kc}">${kt}</span></div>
+          <div class="lb"><button data-lb="GOL" class="${m.label==='GOL'?'on ':''}GOL">GOL</button><button data-lb="REPLAY" class="${m.label==='REPLAY'?'on ':''}REPLAY">REPLAY</button></div>
+        </div>`; };
+  box.innerHTML = all.map(g => {
+    const at = m => new Date(byId[m.file_id].start).getTime() + m.start*1000;
+    g.moments.sort((a,b) => at(a) - at(b));
+    const k = g.moments.filter(m=>m.keep);
+    const range = g.m ? `${hm(g.m.start)}–${hm(g.m.end)}` : '';
+    return `<div class="match"><div class="mhead"><b>${esc(g.name)}</b><span class="small">${range ? range + ' · ' : ''}${g.files.length} video · ${fmtDur(g.files.reduce((a,f)=>a+(f.duration||0),0))}</span>
+      <span class="cnt"><span class="small">${k.length} dipakai</span><span class="tag GOL">${k.filter(m=>m.label==='GOL').length}</span><span class="tag REPLAY">${k.filter(m=>m.label==='REPLAY').length}</span></span></div>
+      ${k.length ? `<div class="cards">${k.map(card).join('')}</div>` : '<div class="empty">Belum ada momen yang dipakai di match ini.</div>'}
+      ${g.moments.length > k.length ? `<div class="sub">Usulan lain · belum dipakai (${g.moments.length - k.length}) <span>centang kalau ternyata momen</span></div><div class="cards dim">${g.moments.filter(m=>!m.keep).map(card).join('')}</div>` : ''}
+      <details class="clips"><summary>Ada momen yang terlewat? Lihat semua ${g.files.length} video di ${esc(g.name)}</summary>
+        ${g.files.map(f => `<div class="clip"><span><b>${esc(f.name)}</b><br><span class="small">${clockAt(f,0)} · ${fmtDur(f.duration)}</span></span>
+          <canvas data-wave="${f.id}" width="600" height="52"></canvas>
+          <button data-open="${f.id}">Buka</button>
+          <select data-mv="${f.id}" title="Pindahkan ke match lain">${opts(f.match)}</select></div>`).join('')}
+      </details></div>`;
+  }).join('');
+  box.querySelectorAll('[data-m]').forEach(el => el.onclick = e => {
+    const m = S.moments.find(x => x.id == el.dataset.m);
+    if (e.target.closest('[data-chk]')) { api('/api/moment', {id:m.id, keep:!m.keep}); return; }
+    const lb = e.target.closest('[data-lb]');
+    if (lb) { if (lb.dataset.lb !== m.label || !m.keep) api('/api/moment', {id:m.id, label:lb.dataset.lb, keep:true}); return; }
+    openEditor(byId[m.file_id], m);
+  });
+  box.querySelectorAll('[data-open]').forEach(el => el.onclick = () => openEditor(byId[el.dataset.open], null));
+  box.querySelectorAll('[data-mv]').forEach(el => el.onchange = () => api('/api/file/match', {id:+el.dataset.mv, match:+el.value}));
+  box.querySelectorAll('details.clips').forEach(d => d.ontoggle = () => { if (d.open) d.querySelectorAll('canvas[data-wave]').forEach(c => drawWave(c, byId[c.dataset.wave], null, null)); });
+}
+
+function drawWave(c, f, m, t){
+  const g = c.getContext('2d'), W = c.width, H = c.height, L = f.loud || [];
+  g.clearRect(0,0,W,H);
+  const step = 0.5, dur = f.duration || L.length*step || 1, x = s => s/dur*W;
+  const lo = (f.base ?? -40) - 6, hi = (f.base ?? -40) + 18, y = v => H - Math.max(0, Math.min(1, (v-lo)/(hi-lo))) * (H-4) - 2;
+  for (const mm of S.moments.filter(q => q.file_id === f.id)) {
+    g.fillStyle = mm === m ? '#D7FF3C33' : (mm.label==='GOL' ? '#D7FF3C18' : '#38D9FF18');
+    g.fillRect(x(mm.start), 0, x(mm.end)-x(mm.start), H);
+  }
+  g.strokeStyle = '#97A0C2'; g.lineWidth = 1.2; g.beginPath();
+  L.forEach((v,i) => { const X = x(i*step), Y = y(v); i ? g.lineTo(X,Y) : g.moveTo(X,Y); }); g.stroke();
+  g.strokeStyle = '#ffffff22'; g.beginPath(); g.moveTo(0, y(f.base)); g.lineTo(W, y(f.base)); g.stroke();
+  if (m) { g.fillStyle = m.label==='GOL' ? '#D7FF3C' : '#38D9FF'; g.fillRect(x(m.start)-1,0,2,H); g.fillRect(x(m.end)-1,0,2,H); }
+  if (t != null) { g.fillStyle = '#FF5A4E'; g.fillRect(x(t)-1, 0, 2, H); }
+}
+
+/* ---------- editor ---------- */
+const vid = $('vid');
+const waveEl = () => cur && cur.m ? $('wave') : $('wave2');
+function openEditor(f, m){
+  cur = {f, m};
+  $('ed').style.display = 'flex';
+  vid.src = `/proxy?id=${f.id}`;
+  vid.onloadedmetadata = () => { vid.currentTime = m ? m.start : 0; };
+  $('edMoment').style.display = m ? '' : 'none';
+  $('edAdd').style.display = m ? 'none' : '';
+  updEditor();
+}
+function updEditor(){
+  const {f, m} = cur;
+  $('edTitle').textContent = m ? `${m.label} · ${clockAt(f, m.peak)}` : `Tambah momen · ${f.name}`;
+  $('edSub').textContent = `${f.name} · direkam ${clockAt(f,0)} · ${fmtDur(f.duration)}` + (m ? ` · ${m.why}` : '');
+  if (m) {
+    document.querySelectorAll('#edMoment .seg button').forEach(b => b.classList.toggle('on', b.dataset.l === m.label));
+    $('edKeep').checked = !!m.keep;
+    $('edIn').textContent = `${m.start.toFixed(1)} dtk`;
+    $('edOut').textContent = `${m.end.toFixed(1)} dtk`;
+    $('edLen').textContent = `Panjang ${fmtDur(m.end - m.start)}`;
+  }
+  drawWave(waveEl(), f, m, vid.currentTime);
+}
+vid.ontimeupdate = () => {
+  if (!cur) return;
+  drawWave(waveEl(), cur.f, cur.m, vid.currentTime);
+  if (cur.playSeg && cur.m && vid.currentTime >= cur.m.end) { vid.pause(); cur.playSeg = false; }
+};
+[$('wave'), $('wave2')].forEach(c => c.onclick = e => { const r = e.target.getBoundingClientRect(); vid.currentTime = (e.clientX - r.left)/r.width * cur.f.duration; });
+$('edClose').onclick = () => { vid.pause(); $('ed').style.display='none'; cur = null; render(); };
+$('ed').onclick = e => { if (e.target.id === 'ed') $('edClose').click(); };
+async function setM(patch){
+  Object.assign(cur.m, patch);
+  await api('/api/moment', {id: cur.m.id, ...patch});
+  cur.m = S.moments.find(x => x.id === cur.m.id) || cur.m; updEditor();
+}
+document.querySelectorAll('#edMoment .seg button').forEach(b => b.onclick = () => setM({label: b.dataset.l}));
+$('edKeep').onchange = () => setM({keep: $('edKeep').checked});
+$('setIn').onclick = () => { const t = +vid.currentTime.toFixed(2); if (t < cur.m.end - 1) setM({start: t}); };
+$('setOut').onclick = () => { const t = +vid.currentTime.toFixed(2); if (t > cur.m.start + 1) setM({end: t}); };
+document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
+  const [k, d] = b.dataset.n.split(':'); const v = Math.max(0, Math.min(cur.f.duration, +(cur.m[k] + +d).toFixed(2)));
+  if (k === 'start' ? v < cur.m.end - 1 : v > cur.m.start + 1) { setM({[k]: v}); vid.currentTime = v; }
+});
+$('playSeg').onclick = () => { vid.currentTime = cur.m.start; cur.playSeg = true; vid.play(); };
+$('delM').onclick = async () => { if (!confirm('Hapus momen ini?')) return; await api('/api/moment', {id: cur.m.id, delete: true}); $('edClose').click(); };
+document.querySelectorAll('[data-add]').forEach(b => b.onclick = async () => {
+  const t = vid.currentTime; await api('/api/moment/add', {file_id: cur.f.id, t, label: b.dataset.add});
+  const m = S.moments.filter(x => x.file_id === cur.f.id).sort((a,b)=>b.id-a.id)[0];
+  cur.m = m; $('edMoment').style.display=''; $('edAdd').style.display='none'; updEditor();
+});
+document.addEventListener('keydown', e => {
+  if (!cur || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') $('edClose').click();
+  if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+  if (e.key === 'ArrowLeft') vid.currentTime -= e.shiftKey ? 0.2 : 2;
+  if (e.key === 'ArrowRight') vid.currentTime += e.shiftKey ? 0.2 : 2;
+});
+
+/* ---------- actions ---------- */
+$('btnDriveList').onclick = async () => {
+  const u = $('driveUrl').value.trim(); if (!u) return alert('Tempel link folder Google Drive dulu.');
+  $('driveMsg').textContent = 'Membaca isi folder…'; $('btnDriveList').disabled = true;
+  let j;
+  try { j = await (await fetch('/api/drive/list', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})})).json(); }
+  catch (e) { j = {ok:false, error:'Koneksi ke aplikasi terputus.'}; }
+  $('btnDriveList').disabled = false;
+  if (!j.ok) { $('driveMsg').innerHTML = `<span class="err">${esc(j.error)}</span>`; return; }
+  const tot = j.folders.reduce((a,f)=>a+f.count,0);
+  $('driveMsg').innerHTML = `<b style="color:var(--ink)">${tot} video ditemukan.</b> Centang folder video mentahnya:`;
+  const guess = f => !/moment|editan|foto|loker|locker/i.test(f.folder);
+  $('driveFolders').innerHTML = j.folders.map((f,i) => `<label><input type="checkbox" data-df="${i}" ${guess(f)?'checked':''}> ${esc(f.folder)} <span class="small">${f.count} video</span></label>`).join('');
+  $('driveFolders').dataset.list = JSON.stringify(j.folders.map(f => f.key));
+  $('btnDrive').style.display = '';
+};
+$('btnDrive').onclick = () => {
+  const keys = JSON.parse($('driveFolders').dataset.list || '[]');
+  const sel = [...document.querySelectorAll('[data-df]')].filter(c => c.checked).map(c => keys[+c.dataset.df]);
+  if (!sel.length) return alert('Centang minimal satu folder.');
+  api('/api/source/drive', {url: $('driveUrl').value.trim(), folders: sel});
+};
+$('btnPick').onclick = () => api('/api/source/pick', {});
+$('sched').oninput = () => $('sched').dataset.touched = 1;
+const saveSched = async () => { await api('/api/schedule', {text: $('sched').value, tolerance: +$('tol').value}); delete $('sched').dataset.touched; };
+$('btnSched').onclick = saveSched;
+$('tol').onchange = () => api('/api/schedule', {schedule: S.schedule, tolerance: +$('tol').value});
+$('btnScan').onclick = async () => {
+  if (S.scanned && !confirm('Scan ulang semua video? Kandidat otomatis dibuat ulang; momen manual tetap disimpan.')) return;
+  if ($('sched').dataset.touched || !S.scanned) await saveSched();
+  api('/api/scan', {});
+};
+$('pname').onchange = () => api('/api/name', {name: $('pname').value.trim()});
+['oP','oL','oC'].forEach(id => $(id).onchange = () => api('/api/options', {portrait:$('oP').checked, landscape:$('oL').checked, copy_full:$('oC').checked}));
+$('btnExport').onclick = () => api('/api/export', {});
+$('btnCancel').onclick = () => { if (confirm('Batalkan proses ini?')) api('/api/cancel', {}); };
+/* ---------- kunci perangkat ---------- */
+async function bukaKunci(){
+  const k = await (await fetch('/api/kunci')).json();
+  if (k.terbuka) { $('kunci').style.display = 'none'; return refresh(); }
+  $('kDev').textContent = k.nama;
+  if (k.alasan === 'dicabut') { $('kTitle').textContent = 'Akses perangkat ini dicabut'; $('kLead').textContent = 'Minta kode baru ke email pemilik untuk masuk lagi.'; }
+  $('kunci').style.display = 'grid';
+}
+async function kirimKode(){
+  $('kKirim').disabled = $('kUlang').disabled = true; $('kMsg').className = 'msg small'; $('kMsg').textContent = 'Mengirim kode…';
+  let j;
+  try { j = await (await fetch('/api/kunci/kirim', {method:'POST', body:'{}'})).json(); } catch (e) { j = {ok:false, error:'Aplikasi tidak merespons.'}; }
+  $('kKirim').disabled = $('kUlang').disabled = false;
+  if (!j.ok) { $('kMsg').className = 'msg small err'; $('kMsg').textContent = j.error && /urlopen|resolve|timed out/i.test(j.error) ? 'Tidak ada internet. Sambungkan dulu, lalu coba lagi.' : (j.error || 'Gagal mengirim kode.'); return; }
+  $('kStep1').style.display = 'none'; $('kStep2').style.display = '';
+  $('kMsg').textContent = `Kode dikirim ke ${j.ke}. Cek inbox (atau folder Spam).`;
+  $('kodeIn').value = ''; $('kodeIn').focus();
+}
+$('kKirim').onclick = kirimKode;
+$('kUlang').onclick = kirimKode;
+$('kodeIn').oninput = () => { $('kodeIn').value = $('kodeIn').value.replace(/\D/g, '').slice(0, 6); if ($('kodeIn').value.length === 6) $('kMasuk').click(); };
+$('kMasuk').onclick = async () => {
+  const kode = $('kodeIn').value; if (kode.length !== 6) { $('kMsg').className = 'msg small err'; $('kMsg').textContent = 'Kodenya 6 angka.'; return; }
+  $('kMasuk').disabled = true; $('kMsg').className = 'msg small'; $('kMsg').textContent = 'Memeriksa…';
+  let j;
+  try { j = await (await fetch('/api/kunci/masuk', {method:'POST', body:JSON.stringify({kode})})).json(); } catch (e) { j = {ok:false, error:'Aplikasi tidak merespons.'}; }
+  $('kMasuk').disabled = false;
+  if (!j.ok) { $('kMsg').className = 'msg small err'; $('kMsg').textContent = j.error || 'Kode salah.'; $('kodeIn').select(); return; }
+  $('kunci').style.display = 'none'; refresh();
+};
+bukaKunci();
+</script>
+</body>
+</html>
