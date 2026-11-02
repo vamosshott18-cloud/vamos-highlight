@@ -120,7 +120,7 @@ function cabutPerangkat(id) {
   PropertiesService.getScriptProperties().deleteProperty('DEV_' + id);
 }
 
-/** Jalankan sekali dari editor untuk memberi izin kirim email (dan tes kirim ke diri sendiri). */
+/** Jalankan sekali dari editor untuk memberi izin (kirim email, simpan data perangkat). */
 function siapkan() {
   rahasia();
   Logger.log('Email kode akan dikirim ke: ' + pemilik());
